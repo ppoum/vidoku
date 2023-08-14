@@ -1,0 +1,54 @@
+<html>
+  <head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+  </head>
+  <body>
+    <script src="./helper.js" type="text/javascript"></script>
+    <script type="module">
+      import init, {
+        GridRenderer,
+        GameState,
+        KeybindManager,
+      } from "./pkg/vidoku.js";
+
+      await init();
+
+      // Attempt to create a kb manager w/ the user's config
+      let keybindManager;
+      try {
+        keybindManager = KeybindManager.with_config(
+          localStorage.getItem("config")
+        );
+      } catch (e) {
+        alert(e);
+        // Rethrow the exception to stop the execution
+        // Is this really the best way to do this in JS?
+        throw e;
+      }
+
+      // Create GridRenderer object and make render loop
+      const gridRenderer = GridRenderer.new();
+      const gameState = GameState.with_keybind_manager(keybindManager);
+
+      const renderLoop = () => {
+        gameState.update();
+        gridRenderer.render(gameState);
+        requestAnimationFrame(renderLoop);
+      };
+      requestAnimationFrame(renderLoop);
+    </script>
+    <canvas
+      id="canvas"
+      tabindex="1"
+      width="600"
+      height="600"
+      style="outline: none"
+      autofocus
+    ></canvas>
+    <br />
+    <br />
+    <textarea id="config" rows="10" cols="40"></textarea>
+    <br />
+    <button id="configSave">Save</button>
+  </body>
+</html>
