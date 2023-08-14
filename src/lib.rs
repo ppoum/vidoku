@@ -2,6 +2,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 mod actions;
 mod game_state;
+mod generation;
 mod key;
 mod keybinds;
 mod render;
