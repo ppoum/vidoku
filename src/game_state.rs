@@ -47,6 +47,7 @@ pub struct GameState {
     focused_col: u8,
     // Refactor game options into their own struct
     show_errors: bool,
+    highlight_same_digits: bool,
 }
 
 impl GameState {
@@ -60,6 +61,10 @@ impl GameState {
 
     pub fn show_errors(&self) -> bool {
         self.show_errors
+    }
+
+    pub fn highlight_same_digits(&self) -> bool {
+        self.highlight_same_digits
     }
 
     pub fn expected_value(&self, row: usize, col: usize) -> u8 {
@@ -91,7 +96,7 @@ impl GameState {
         }
     }
 
-    fn get_focused_cell(&self) -> &Cell {
+    pub fn get_focused_cell(&self) -> &Cell {
         &self.grid[self.focused_row as usize][self.focused_col as usize]
     }
 
@@ -195,6 +200,7 @@ impl GameState {
             focused_row: 0,
             focused_col: 0,
             show_errors: true,
+            highlight_same_digits: true,
         }
     }
 
