@@ -8,11 +8,15 @@ pub enum Action {
     SetCandidate(u8),
     RemoveCandidate(u8),
     ToggleCandidate(u8),
+    ClearCandidates,
     ClearCell,
     CycleColor,
     // Unsure if useful when cycling between 3 choices is already fast
     // TODO SetColor(PRIMARY/SECONDARY/CLEAR)?
     ClearAllColors,
+    HighlightCurrentDigit,
+    HighlightDigit(u8),
+    ClearHighlight,
 }
 
 fn parse_action_string(value: &str) -> Option<(String, Vec<String>)> {
@@ -81,7 +85,10 @@ impl TryFrom<String> for Action {
             return match name.to_lowercase().as_ref() {
                 "cyclecolor" => Ok(Action::CycleColor),
                 "clearallcolors" => Ok(Action::ClearAllColors),
+                "clearcandidates" => Ok(Action::ClearCandidates),
                 "clearcell" => Ok(Action::ClearCell),
+                "highlightcurrentdigit" => Ok(Action::HighlightCurrentDigit),
+                "clearhighlight" => Ok(Action::ClearHighlight),
                 _ => Err(ActionParsingError(value.clone())),
             };
         }
@@ -126,6 +133,17 @@ impl TryFrom<String> for Action {
                     if let Ok(arg) = args[0].parse() {
                         if (1..=9).contains(&arg) {
                             Some(Action::ToggleCandidate(arg))
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                }
+                "highlightdigit" => {
+                    if let Ok(arg) = args[0].parse() {
+                        if (1..=9).contains(&arg) {
+                            Some(Action::HighlightDigit(arg))
                         } else {
                             None
                         }

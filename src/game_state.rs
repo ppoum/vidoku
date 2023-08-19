@@ -45,9 +45,9 @@ pub struct GameState {
     solution: Vec<Vec<u8>>,
     focused_row: u8,
     focused_col: u8,
+    highlighted_digit: Option<u8>,
     // Refactor game options into their own struct
     show_errors: bool,
-    highlight_same_digits: bool,
 }
 
 impl GameState {
@@ -59,12 +59,12 @@ impl GameState {
         (self.focused_row, self.focused_col)
     }
 
-    pub fn show_errors(&self) -> bool {
-        self.show_errors
+    pub fn highlighted_digit(&self) -> Option<u8> {
+        self.highlighted_digit
     }
 
-    pub fn highlight_same_digits(&self) -> bool {
-        self.highlight_same_digits
+    pub fn show_errors(&self) -> bool {
+        self.show_errors
     }
 
     pub fn expected_value(&self, row: usize, col: usize) -> u8 {
@@ -199,8 +199,8 @@ impl GameState {
             solution: vec![vec![0; 9]; 9],
             focused_row: 0,
             focused_col: 0,
+            highlighted_digit: None,
             show_errors: true,
-            highlight_same_digits: true,
         }
     }
 
@@ -273,6 +273,18 @@ impl GameState {
                         let n = *n as usize - 1;
                         let curr_val = self.get_mut_focused_cell().candidates[n];
                         self.get_mut_focused_cell().candidates[n] = !curr_val;
+                    }
+                    Action::ClearCandidates => {
+                        self.get_mut_focused_cell().clear_candidates();
+                    }
+                    Action::HighlightCurrentDigit => {
+                        self.highlighted_digit = self.get_focused_cell().digit;
+                    }
+                    Action::HighlightDigit(n) => {
+                        self.highlighted_digit = Some(*n);
+                    }
+                    Action::ClearHighlight => {
+                        self.highlighted_digit = None;
                     }
                     _ => todo!("Remaining actions: {:?}", action),
                 }

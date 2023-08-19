@@ -65,18 +65,14 @@ impl GridRenderer {
 
     fn draw_cells(&self, game_state: &GameState) {
         let grid = game_state.grid();
-        let focused_digit = game_state.get_focused_cell().digit;
 
         for (row, row_vec) in grid.iter().enumerate() {
             for (col, cell) in row_vec.iter().enumerate() {
-                // Change focused cell's border color
-                // TODO change bg color of cells with same digit as focused cell
-                if game_state.highlight_same_digits()
-                    && focused_digit.is_some()
-                    && focused_digit == cell.digit
+                if game_state.highlighted_digit().is_some()
+                    && game_state.highlighted_digit() == cell.digit
                 {
-                    // Highlight same digits option is set, and both cells have the same digit in
-                    // them (not empty)
+                    // Highlighted digit is not None and current cell has same digit, change bg
+                    // color
                     self.draw_cell_background(row, col, "rgba(200,200,200,1)"); // Gray
                 }
 
