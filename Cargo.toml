@@ -10,6 +10,12 @@ crate-type = ["cdylib", "rlib"]
 wasm-bindgen = "0.2"
 console_error_panic_hook = "0.1"
 thiserror = "1.0"
+rand = "0.8"
+rand_seeder = "0.2"
+rand_pcg = "0.3"
+
+# rand depends on getrandom, which needs the js feature enable to compile to wasm*-unknown-unknown
+getrandom = { version = "0.2", features = ["js"] }
 
 [dependencies.web-sys]
 version = "0.3"

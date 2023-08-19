@@ -5,6 +5,7 @@ use web_sys::{console, KeyboardEvent};
 
 use crate::{
     actions::Action,
+    generation,
     key::Key,
     keybinds::{Keybind, KeybindManager},
 };
@@ -29,6 +30,16 @@ impl Cell {
         }
     }
 
+    pub fn from_digit(digit: u8) -> Self {
+        Cell {
+            digit: match digit {
+                0 => None,
+                d => Some(d),
+            },
+            candidates: [false; 9],
+        }
+    }
+
     pub fn clear_candidates(&mut self) {
         self.candidates = [false; 9];
     }
@@ -39,6 +50,7 @@ pub struct GameState {
     kb_manager: KeybindManager,
     last_key: Rc<RefCell<Option<Keybind>>>,
     grid: Vec<Vec<Cell>>,
+    solution: Vec<Vec<u8>>,
     focused_row: u8,
     focused_col: u8,
 }
@@ -55,7 +67,7 @@ impl GameState {
     /// Reads the last key pressed without consuming it.
     pub fn peek_last_key(&self) -> Option<Keybind> {
         // RefCell can only be mutably borrowed by the keyboard event
-        // callback when #get_last_key is called, which should drop the borrow quickly.
+        // callback when #consume_last_key is called, which should drop the borrow quickly.
         // Loop until we can get an immutable borrow
         loop {
             // Only return if borrow succeeded
@@ -173,6 +185,7 @@ impl GameState {
             kb_manager,
             last_key: last_key_mtx,
             grid: vec![vec![Cell::new(); 9]; 9],
+            solution: vec![vec![0; 9]; 9],
             focused_row: 0,
             focused_col: 0,
         }
@@ -228,5 +241,17 @@ impl GameState {
                 }
             }
         }
+    }
+    pub fn generate_grid(&mut self, seed: String, given_count: usize) {
+        let (solution, grid) = generation::generate_grid(seed, given_count);
+
+        // Map grid u8 to Cell
+        let grid = grid
+            .into_iter()
+            .map(|r| r.into_iter().map(Cell::from_digit).collect())
+            .collect();
+        self.grid = grid;
+
+        self.solution = solution;
     }
 }
