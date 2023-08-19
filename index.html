@@ -29,6 +29,7 @@
       // Create GridRenderer object and make render loop
       const gridRenderer = GridRenderer.new();
       const gameState = GameState.with_keybind_manager(keybindManager);
+      gameState.generate_grid("testseed", 25);
 
       const renderLoop = () => {
         gameState.update();

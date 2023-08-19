@@ -1,15 +1,29 @@
-use rand::{rngs::ThreadRng, seq::SliceRandom, Rng};
+use rand::{seq::SliceRandom, Rng};
+use rand_pcg::Pcg64;
+use rand_seeder::Seeder;
+
+/// Returns a tuple containing the fully solved grid, as well as a masked version of the grid
+///
+/// # Arguments
+/// * `seed_str` - A string used as a seed to generate the grid and its mask
+/// * `given_count` - The number of unmasked cells in the masked grid (>= 17)
+pub fn generate_grid(seed_str: String, given_count: usize) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
+    let mut rng: Pcg64 = Seeder::from(seed_str).make_rng();
+
+    let filled = generate_random_filled_grid(&mut rng);
+    let masked = mask_grid(filled.clone(), given_count, &mut rng);
+    (filled, masked)
+}
 
 /// Creates a fully completed Sudoku grid
-pub fn generate_random_filled_grid() -> Vec<Vec<u8>> {
+fn generate_random_filled_grid(rng: &mut Pcg64) -> Vec<Vec<u8>> {
     let mut grid = vec![vec![0; 9]; 9];
     // Fill boxes 1, 5 and 9 randomly since they never interact with eachother
-    let mut rng = rand::thread_rng();
     let offsets = [0, 3, 6];
 
     for offset in offsets {
         let mut digits = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-        digits.shuffle(&mut rng);
+        digits.shuffle(rng);
         for (i, digit) in digits.iter().enumerate() {
             let row = (i / 3) + offset;
             let col = (i % 3) + offset;
@@ -17,14 +31,14 @@ pub fn generate_random_filled_grid() -> Vec<Vec<u8>> {
         }
     }
 
-    match fill_grid(grid, &mut rng) {
+    match fill_grid(grid, rng) {
         Some(grid) => grid,
         None => panic!("Unable to fill grid"),
     }
 }
 
 /// Recursively fills cells in the grid until everything is filled
-fn fill_grid(grid: Vec<Vec<u8>>, rng: &mut ThreadRng) -> Option<Vec<Vec<u8>>> {
+fn fill_grid(grid: Vec<Vec<u8>>, rng: &mut Pcg64) -> Option<Vec<Vec<u8>>> {
     // Find first empty cell
     let (row_idx, col_idx) = match get_first_empty_index(&grid) {
         Some((r, c)) => (r, c),
@@ -73,12 +87,10 @@ fn solution_count(grid: Vec<Vec<u8>>) -> usize {
 }
 
 /// Masks a filled grid until `given_count` cells remain
-fn mask_grid(grid: Vec<Vec<u8>>, given_count: usize) -> Vec<Vec<u8>> {
-    // TODO figure out randomness (seeded optimally)
+fn mask_grid(grid: Vec<Vec<u8>>, given_count: usize, rng: &mut Pcg64) -> Vec<Vec<u8>> {
     // This function could reach a state where no removal actions would result in a unique
     // situation, in which case the function would get stuck in a loop. Add a safeguard if it
     // occurs often (doubt it should be common)
-    let mut rng = rand::thread_rng();
     assert!(given_count >= 17); // Need at least 17 clues to have unique solution
     let mut mask_count = 9 * 9 - given_count;
     let mut removed = 0;
@@ -88,10 +100,10 @@ fn mask_grid(grid: Vec<Vec<u8>>, given_count: usize) -> Vec<Vec<u8>> {
     while mask_count >= 4 && removed < 20 {
         // TODO Cells 1-4 could have some overlap with each other. Maybe validate there's no
         //  overlap if worthwhile?
-        let (c1_r, c1_c) = get_random_unmasked_cell(&grid, &mut rng);
-        let (c2_r, c2_c) = get_random_unmasked_cell(&grid, &mut rng);
-        let (c3_r, c3_c) = get_jittery_mirrored_cell(&grid, c1_r, c1_c, &mut rng);
-        let (c4_r, c4_c) = get_jittery_mirrored_cell(&grid, c2_r, c2_c, &mut rng);
+        let (c1_r, c1_c) = get_random_unmasked_cell(&grid, rng);
+        let (c2_r, c2_c) = get_random_unmasked_cell(&grid, rng);
+        let (c3_r, c3_c) = get_jittery_mirrored_cell(&grid, c1_r, c1_c, rng);
+        let (c4_r, c4_c) = get_jittery_mirrored_cell(&grid, c2_r, c2_c, rng);
 
         // Mask the cells
         masked_grid[c1_r][c1_c] = 0;
@@ -113,8 +125,8 @@ fn mask_grid(grid: Vec<Vec<u8>>, given_count: usize) -> Vec<Vec<u8>> {
 
     // Remove cells in mirrored pairs
     while mask_count >= 2 && removed < 30 {
-        let (c1_r, c1_c) = get_random_unmasked_cell(&grid, &mut rng);
-        let (c2_r, c2_c) = get_jittery_mirrored_cell(&grid, c1_r, c1_c, &mut rng);
+        let (c1_r, c1_c) = get_random_unmasked_cell(&grid, rng);
+        let (c2_r, c2_c) = get_jittery_mirrored_cell(&grid, c1_r, c1_c, rng);
 
         masked_grid[c1_r][c1_c] = 0;
         masked_grid[c2_r][c2_c] = 0;
@@ -131,7 +143,7 @@ fn mask_grid(grid: Vec<Vec<u8>>, given_count: usize) -> Vec<Vec<u8>> {
 
     // Remove remaining cells individually
     while mask_count >= 1 {
-        let (cell_r, cell_c) = get_random_unmasked_cell(&grid, &mut rng);
+        let (cell_r, cell_c) = get_random_unmasked_cell(&grid, rng);
         masked_grid[cell_r][cell_c] = 0;
 
         if solution_count(masked_grid.clone()) == 1 {
@@ -161,7 +173,7 @@ fn get_first_empty_index(grid: &[Vec<u8>]) -> Option<(usize, usize)> {
     Some((row_idx, col_idx))
 }
 
-fn get_random_unmasked_cell(grid: &[Vec<u8>], rng: &mut ThreadRng) -> (usize, usize) {
+fn get_random_unmasked_cell(grid: &[Vec<u8>], rng: &mut Pcg64) -> (usize, usize) {
     // Function assumes there is at least 1 non-zero cell
     loop {
         let row = rng.gen_range(0..9);
@@ -176,7 +188,7 @@ fn get_jittery_mirrored_cell(
     grid: &[Vec<u8>],
     row: usize,
     col: usize,
-    rng: &mut ThreadRng,
+    rng: &mut Pcg64,
 ) -> (usize, usize) {
     let mirror_r = 9 - row as isize - 1;
     let mirror_c = 9 - col as isize - 1;
@@ -249,32 +261,6 @@ fn is_safe_placement(grid: &[Vec<u8>], row: usize, col: usize, val: u8) -> bool 
     true
 }
 
-// Unsure why clippy detects as dead code when it is the main function
-#[allow(dead_code)]
-pub fn main() {
-    let complete = generate_random_filled_grid();
-    print_grid(&complete);
-    let masked = mask_grid(complete, 25);
-    println!();
-    print_grid(&masked);
-}
-
-/// Pretty-prints the grid
-fn print_grid(grid: &[Vec<u8>]) {
-    for (i, row) in grid.iter().enumerate() {
-        for (j, elem) in row.iter().enumerate() {
-            print!("{} ", elem);
-            if j % 3 == 2 {
-                print!(" ") // Extra space
-            }
-        }
-        println!();
-        if i % 3 == 2 {
-            println!();
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -315,5 +301,22 @@ mod tests {
         .to_vec();
 
         assert_eq!(solution_count(grid), 5);
+    }
+
+    #[test]
+    fn test_seed_consistent_results() {
+        // Tests if the same seed always results in the same grid and mask
+        const SEED: &str = "EXAMPLE_SEED";
+        let mut rng: Pcg64 = Seeder::from(SEED).make_rng();
+        let grid_1 = generate_random_filled_grid(&mut rng);
+        let mask_1 = mask_grid(grid_1.clone(), 25, &mut rng);
+
+        // Recreate a new rng object (reset the seed)
+        let mut rng: Pcg64 = Seeder::from(SEED).make_rng();
+        let grid_2 = generate_random_filled_grid(&mut rng);
+        let mask_2 = mask_grid(grid_2.clone(), 25, &mut rng);
+
+        assert_eq!(grid_1, grid_2);
+        assert_eq!(mask_1, mask_2);
     }
 }
