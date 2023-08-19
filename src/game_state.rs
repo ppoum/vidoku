@@ -45,6 +45,8 @@ pub struct GameState {
     solution: Vec<Vec<u8>>,
     focused_row: u8,
     focused_col: u8,
+    // Refactor game options into their own struct
+    show_errors: bool,
 }
 
 impl GameState {
@@ -52,8 +54,16 @@ impl GameState {
         &self.grid
     }
 
-    pub fn focused_cell(&self) -> (u8, u8) {
+    pub fn focused_cell_coord(&self) -> (u8, u8) {
         (self.focused_row, self.focused_col)
+    }
+
+    pub fn show_errors(&self) -> bool {
+        self.show_errors
+    }
+
+    pub fn expected_value(&self, row: usize, col: usize) -> u8 {
+        self.solution[row][col]
     }
 
     /// Reads the last key pressed without consuming it.
@@ -184,6 +194,7 @@ impl GameState {
             solution: vec![vec![0; 9]; 9],
             focused_row: 0,
             focused_col: 0,
+            show_errors: true,
         }
     }
 

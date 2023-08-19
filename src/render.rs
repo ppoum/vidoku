@@ -65,28 +65,23 @@ impl GridRenderer {
 
     fn draw_cells(&self, game_state: &GameState) {
         let grid = game_state.grid();
-        let focused_cell = game_state.focused_cell();
+        let focused_cell = game_state.focused_cell_coord();
 
         for (row, row_vec) in grid.iter().enumerate() {
             for (col, cell) in row_vec.iter().enumerate() {
                 // Change focused cell's border color
                 // TODO change bg color of cells with same digit as focused cell
-                if row as u8 == focused_cell.0 && col as u8 == focused_cell.1 {
-                    let (top_y, top_x) = self.get_cell_pos(row, col);
 
-                    // Draw highlighted border
-                    self.ctx.set_stroke_style(&"rgba(230,60,255,1)".into());
-                    self.ctx.set_line_width(3.);
-                    self.ctx.stroke_rect(
-                        top_x as f64,
-                        top_y as f64,
-                        self.cell_size as f64,
-                        self.cell_size as f64,
-                    );
-                }
+                if let Some(digit) = cell.digit {
+                    let expected_value = game_state.expected_value(row, col);
+                    // Only mark as error if show_errors is set AND user value is wrong
+                    let is_error = game_state.show_errors() && digit != expected_value;
+                    if is_error {
+                        // Set bg color to red to indicate error
+                        self.draw_cell_background(row, col, "rgba(220,0,0,1)");
+                    }
 
-                if cell.digit.is_some() {
-                    self.write_cell_digit(row, col, cell);
+                    self.write_cell_digit(row, col, cell, is_error);
                 } else {
                     // Render candidates
                     self.write_cell_candidates(row, col, &cell.candidates);
@@ -95,7 +90,33 @@ impl GridRenderer {
         }
     }
 
-    fn write_cell_digit(&self, row: usize, col: usize, cell: &Cell) {
+    fn draw_cell_background(&self, row: usize, col: usize, color: &str) {
+        let (top_y, top_x) = self.get_cell_pos(row, col);
+        self.ctx.set_fill_style(&color.into());
+        self.ctx.fill_rect(
+            top_x as f64,
+            top_y as f64,
+            self.cell_size as f64,
+            self.cell_size as f64,
+        );
+    }
+
+    fn draw_highlighted_cell_border(&self, game_state: &GameState) {
+        let focused_cell = game_state.focused_cell_coord();
+        let (top_y, top_x) = self.get_cell_pos(focused_cell.0.into(), focused_cell.1.into());
+
+        // Draw highlighted border
+        self.ctx.set_stroke_style(&"rgba(230,60,255,1)".into()); // Purple
+        self.ctx.set_line_width(3.);
+        self.ctx.stroke_rect(
+            top_x as f64,
+            top_y as f64,
+            self.cell_size as f64,
+            self.cell_size as f64,
+        );
+    }
+
+    fn write_cell_digit(&self, row: usize, col: usize, cell: &Cell, is_error: bool) {
         assert!(cell.digit.is_some());
         let digit = cell.digit.unwrap();
         assert!((1..=9).contains(&digit));
@@ -107,7 +128,8 @@ impl GridRenderer {
         let y_pos = row_pos + 4 + self.cell_size / 2; // Y pos needs a small offset for some reason
 
         // Set digit color (differenciate givens and user inputs)
-        if cell.is_given {
+        // Digit should be black if given cell or invalid value (for contrast w/ red background)
+        if cell.is_given || is_error {
             // Black
             self.ctx.set_fill_style(&"rgba(0,0,0,1)".into());
         } else {
@@ -185,7 +207,8 @@ impl GridRenderer {
     /// Renders the grid to the canvas
     pub fn render(&self, game_state: &GameState) {
         self.clear_canvas();
-        self.draw_grid();
         self.draw_cells(game_state);
+        self.draw_grid();
+        self.draw_highlighted_cell_border(game_state);
     }
 }
