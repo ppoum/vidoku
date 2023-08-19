@@ -14,6 +14,7 @@ use crate::{
 pub struct Cell {
     pub digit: Option<u8>,
     pub candidates: [bool; 9],
+    pub is_given: bool,
 }
 
 impl Default for Cell {
@@ -27,16 +28,7 @@ impl Cell {
         Cell {
             digit: None,
             candidates: [false; 9],
-        }
-    }
-
-    pub fn from_digit(digit: u8) -> Self {
-        Cell {
-            digit: match digit {
-                0 => None,
-                d => Some(d),
-            },
-            candidates: [false; 9],
+            is_given: false,
         }
     }
 
@@ -87,6 +79,10 @@ impl GameState {
                 return val;
             }
         }
+    }
+
+    fn get_focused_cell(&self) -> &Cell {
+        &self.grid[self.focused_row as usize][self.focused_col as usize]
     }
 
     fn get_mut_focused_cell(&mut self) -> &mut Cell {
@@ -220,19 +216,43 @@ impl GameState {
                         }
                     }
                     Action::WriteCell(n) => {
+                        if self.get_focused_cell().is_given {
+                            return;
+                        }
                         self.get_mut_focused_cell().digit = Some(*n);
                         self.get_mut_focused_cell().clear_candidates();
                     }
-                    Action::ClearCell => self.get_mut_focused_cell().digit = None,
+                    Action::ClearCell => {
+                        if self.get_focused_cell().is_given {
+                            return;
+                        }
+                        self.get_mut_focused_cell().digit = None
+                    }
                     Action::SetCandidate(n) => {
+                        if self.get_focused_cell().is_given
+                            || self.get_focused_cell().digit.is_some()
+                        {
+                            return;
+                        }
+
                         let n = *n as usize - 1;
                         self.get_mut_focused_cell().candidates[n] = true
                     }
                     Action::RemoveCandidate(n) => {
+                        if self.get_focused_cell().is_given
+                            || self.get_focused_cell().digit.is_some()
+                        {
+                            return;
+                        }
                         let n = *n as usize - 1;
                         self.get_mut_focused_cell().candidates[n] = false
                     }
                     Action::ToggleCandidate(n) => {
+                        if self.get_focused_cell().is_given
+                            || self.get_focused_cell().digit.is_some()
+                        {
+                            return;
+                        }
                         let n = *n as usize - 1;
                         let curr_val = self.get_mut_focused_cell().candidates[n];
                         self.get_mut_focused_cell().candidates[n] = !curr_val;
@@ -248,7 +268,24 @@ impl GameState {
         // Map grid u8 to Cell
         let grid = grid
             .into_iter()
-            .map(|r| r.into_iter().map(Cell::from_digit).collect())
+            .map(|r| {
+                r.into_iter()
+                    .map(|n| match n {
+                        // 0 means masked cell
+                        0 => Cell {
+                            digit: None,
+                            candidates: [false; 9],
+                            is_given: false,
+                        },
+                        // Other digit means given cell
+                        n => Cell {
+                            digit: Some(n),
+                            candidates: [false; 9],
+                            is_given: true,
+                        },
+                    })
+                    .collect()
+            })
             .collect();
         self.grid = grid;
 

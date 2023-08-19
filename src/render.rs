@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
 
-use crate::game_state::GameState;
+use crate::game_state::{Cell, GameState};
 
 const SIZE: usize = 600;
 const PADDING: usize = 3;
@@ -85,8 +85,8 @@ impl GridRenderer {
                     );
                 }
 
-                if let Some(digit) = cell.digit {
-                    self.write_cell_digit(row, col, digit);
+                if cell.digit.is_some() {
+                    self.write_cell_digit(row, col, cell);
                 } else {
                     // Render candidates
                     self.write_cell_candidates(row, col, &cell.candidates);
@@ -95,19 +95,31 @@ impl GridRenderer {
         }
     }
 
-    fn write_cell_digit(&self, row: usize, col: usize, val: u8) {
-        assert!((1..=9).contains(&val));
+    fn write_cell_digit(&self, row: usize, col: usize, cell: &Cell) {
+        assert!(cell.digit.is_some());
+        let digit = cell.digit.unwrap();
+        assert!((1..=9).contains(&digit));
+
         let (row_pos, col_pos) = self.get_cell_pos(row, col);
         // Returned values point to top-left corner of cell, but we want
         // y to be bottom of text and x to be center of text.
         let x_pos = col_pos + self.cell_size / 2;
         let y_pos = row_pos + 4 + self.cell_size / 2; // Y pos needs a small offset for some reason
-        self.ctx.set_fill_style(&"rgba(0,0,0,1)".into()); // BLACK
+
+        // Set digit color (differenciate givens and user inputs)
+        if cell.is_given {
+            // Black
+            self.ctx.set_fill_style(&"rgba(0,0,0,1)".into());
+        } else {
+            // Purple
+            self.ctx.set_fill_style(&"rgba(230,60,255,1)".into());
+        }
+
         self.ctx.set_font(&format!("{}px consolas", FONT_SIZE));
         self.ctx.set_text_align("center");
         self.ctx.set_text_baseline("middle");
         self.ctx
-            .fill_text(&val.to_string(), x_pos as f64, y_pos as f64)
+            .fill_text(&digit.to_string(), x_pos as f64, y_pos as f64)
             .unwrap();
     }
 
