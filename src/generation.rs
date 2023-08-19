@@ -100,10 +100,10 @@ fn mask_grid(grid: Vec<Vec<u8>>, given_count: usize, rng: &mut Pcg64) -> Vec<Vec
     while mask_count >= 4 && removed < 20 {
         // TODO Cells 1-4 could have some overlap with each other. Maybe validate there's no
         //  overlap if worthwhile?
-        let (c1_r, c1_c) = get_random_unmasked_cell(&grid, rng);
-        let (c2_r, c2_c) = get_random_unmasked_cell(&grid, rng);
-        let (c3_r, c3_c) = get_jittery_mirrored_cell(&grid, c1_r, c1_c, rng);
-        let (c4_r, c4_c) = get_jittery_mirrored_cell(&grid, c2_r, c2_c, rng);
+        let (c1_r, c1_c) = get_random_unmasked_cell(&masked_grid, rng);
+        let (c2_r, c2_c) = get_random_unmasked_cell(&masked_grid, rng);
+        let (c3_r, c3_c) = get_jittery_mirrored_cell(&masked_grid, c1_r, c1_c, rng);
+        let (c4_r, c4_c) = get_jittery_mirrored_cell(&masked_grid, c2_r, c2_c, rng);
 
         // Mask the cells
         masked_grid[c1_r][c1_c] = 0;
@@ -125,8 +125,8 @@ fn mask_grid(grid: Vec<Vec<u8>>, given_count: usize, rng: &mut Pcg64) -> Vec<Vec
 
     // Remove cells in mirrored pairs
     while mask_count >= 2 && removed < 30 {
-        let (c1_r, c1_c) = get_random_unmasked_cell(&grid, rng);
-        let (c2_r, c2_c) = get_jittery_mirrored_cell(&grid, c1_r, c1_c, rng);
+        let (c1_r, c1_c) = get_random_unmasked_cell(&masked_grid, rng);
+        let (c2_r, c2_c) = get_jittery_mirrored_cell(&masked_grid, c1_r, c1_c, rng);
 
         masked_grid[c1_r][c1_c] = 0;
         masked_grid[c2_r][c2_c] = 0;
@@ -143,7 +143,7 @@ fn mask_grid(grid: Vec<Vec<u8>>, given_count: usize, rng: &mut Pcg64) -> Vec<Vec
 
     // Remove remaining cells individually
     while mask_count >= 1 {
-        let (cell_r, cell_c) = get_random_unmasked_cell(&grid, rng);
+        let (cell_r, cell_c) = get_random_unmasked_cell(&masked_grid, rng);
         masked_grid[cell_r][cell_c] = 0;
 
         if solution_count(masked_grid.clone()) == 1 {
