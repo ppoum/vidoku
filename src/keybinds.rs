@@ -56,13 +56,11 @@ impl TryFrom<String> for Keybind {
         match value.chars().filter(|&c| c == '-').count() {
             0 => {
                 // No modifier keys, whole string should just be the character
-                match value.try_into() {
-                    Ok(key) => Ok(Keybind {
-                        key,
-                        modifier: None,
-                    }),
-                    Err(e) => Err(KeybindParsingError::Key(e)),
-                }
+                let key = value.try_into().map_err(KeybindParsingError::Key)?;
+                Ok(Keybind {
+                    key,
+                    modifier: None,
+                })
             }
             1 => {
                 // Modifier key + key, formatted as Mod-key (with some optional spaces)
@@ -165,14 +163,14 @@ impl KeybindManager {
             if bind.is_none() || action.is_none() || iter.next().is_some() {
                 return Err(KeybindManagerError::Format(line.to_owned()));
             }
-            let bind: Keybind = match bind.unwrap().try_into() {
-                Ok(k) => k,
-                Err(e) => return Err(KeybindManagerError::KeybindParsingError(e)),
-            };
-            let action: Action = match action.unwrap().try_into() {
-                Ok(a) => a,
-                Err(e) => return Err(KeybindManagerError::ActionParsingError(e)),
-            };
+            let bind: Keybind = bind
+                .unwrap()
+                .try_into()
+                .map_err(KeybindManagerError::KeybindParsingError)?;
+            let action: Action = action
+                .unwrap()
+                .try_into()
+                .map_err(KeybindManagerError::ActionParsingError)?;
             binds.insert(bind, action);
         }
         Ok(KeybindManager { binds })
