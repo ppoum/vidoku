@@ -122,7 +122,7 @@ impl GameState {
                     if e.ctrl_key() {
                         // Block event if a keybind is registered with same key
                         let keybind = Keybind {
-                            key: e.key().try_into().unwrap_or(Key::Zero),
+                            key: Key::try_from_js(e.key()).unwrap_or(Key::Zero),
                             modifier: Some(Key::Control),
                         };
                         if kb_manager.get_action(&keybind).is_some() {
@@ -142,14 +142,14 @@ impl GameState {
                             // Edge-case use code (Digitn or Numpadn) to generate Key object
                             let key_digit = e.code().chars().last().unwrap();
                             if key_digit.is_ascii_digit() {
-                                key = Some(key_digit.to_string().try_into().unwrap());
+                                key = Some(Key::try_from_js(key_digit.to_string()).unwrap());
                             }
                         }
 
                         if key.is_none() {
                             // Edge-case didn't apply, do normal logic with e.key
                             // Map unknown keys to 0 (probably should warn users in console)
-                            key = Some(e.key().try_into().unwrap_or(Key::Zero));
+                            key = Some(Key::try_from_js(e.key()).unwrap_or(Key::Zero));
                         }
                         let key = key.unwrap();
 
