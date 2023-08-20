@@ -12,6 +12,8 @@ window.onload = () => {
 
   let currConfig = window.localStorage.getItem("config");
   configTextArea.value = currConfig;
+
+  registerAccordions();
 };
 
 function saveConfigToLocalStorage() {
@@ -20,4 +22,21 @@ function saveConfigToLocalStorage() {
   window.localStorage.setItem("config", val);
   console.debug("Saved config to local storage.");
   location.reload();
+}
+
+function registerAccordions() {
+  var accs = document.getElementsByClassName("accordion");
+  for (let i = 0; i < accs.length; i++) {
+    accs[i].addEventListener("click", () => {
+      accs[i].classList.toggle("active");
+
+      // Toggle between block and unblocked display
+      let panel = accs[i].nextElementSibling;
+      if (panel.style.display === "block") {
+        panel.style.display = "none";
+      } else {
+        panel.style.display = "block";
+      }
+    });
+  }
 }

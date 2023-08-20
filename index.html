@@ -1,6 +1,7 @@
 <html>
   <head>
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <script src="./helper.js" type="text/javascript"></script>
@@ -10,6 +11,9 @@
         GameState,
         KeybindManager,
       } from "./pkg/vidoku.js";
+
+      import { registerGameOptions } from "./game.js";
+      registerGameOptions(null);
 
       await init();
 
@@ -48,8 +52,23 @@
     ></canvas>
     <br />
     <br />
-    <textarea id="config" rows="10" cols="40"></textarea>
-    <br />
-    <button id="configSave">Save</button>
+    <button class="accordion">Game settings</button>
+    <div class="panel">
+      <label for="game-given">Given clues: </label>
+      <input type="text" name="game-given" value="25" id="game-given" />
+      <br />
+      <label for="game-option-show-errors">Show errors: </label>
+      <input
+        type="checkbox"
+        name="game-option-show-errors"
+        id="game-option-show-errors"
+      />
+    </div>
+    <button class="accordion">Config</button>
+    <div class="panel">
+      <textarea id="config" rows="10" cols="40"></textarea>
+      <br />
+      <button id="configSave">Save</button>
+    </div>
   </body>
 </html>

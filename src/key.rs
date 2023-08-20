@@ -184,11 +184,6 @@ impl From<Key> for u8 {
     }
 }
 
-/* #[derive(Error, Debug)]
-#[error("Invalid key value: {0}")]
-pub struct KeyParseError(String);
-*/
-
 #[derive(Error, Debug)]
 pub enum KeyParseError {
     #[error("Invalid config key notation: {0}")]
