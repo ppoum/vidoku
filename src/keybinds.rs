@@ -56,7 +56,7 @@ impl TryFrom<String> for Keybind {
         match value.chars().filter(|&c| c == '-').count() {
             0 => {
                 // No modifier keys, whole string should just be the character
-                let key = value.try_into().map_err(KeybindParsingError::Key)?;
+                let key = Key::try_from_config(value).map_err(KeybindParsingError::Key)?;
                 Ok(Keybind {
                     key,
                     modifier: None,
@@ -80,7 +80,7 @@ impl TryFrom<String> for Keybind {
                     _ => return Err(KeybindParsingError::ModifierKey(value)),
                 };
 
-                let key = match key.unwrap().try_into() {
+                let key = match Key::try_from_config(key.unwrap()) {
                     Ok(k) => k,
                     Err(e) => return Err(KeybindParsingError::Key(e)),
                 };
